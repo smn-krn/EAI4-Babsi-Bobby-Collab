@@ -1,0 +1,27 @@
+ssh kit-18@10.42.0.1
+
+sudo systemd-analye
+
+sudo systemd-analye critical-chain
+
+cd /etc/systemd/system
+nano sensehat-host-ip.service
+
+cd /etc/systemd/system/multi-user.target.wants
+ls -la
+
+cd /usr/local/bin
+nano sensehat_boot_wrapper.sh
+nano sensehat_show_error.py
+nano sensehat_show_host_ip.py
+
+sudo systemctl status sensehat-host-ip.service
+
+cd /etc/systemd/system
+sudo nano sensehat-host-ip.service
+
+sudo systemctl daemon-reload
+
+sudo systemctl start sensehat-host-ip.service
+
+journalctl -u sensehat-host-ip.service

@@ -1,0 +1,2 @@
+model,backend,n_samples,mae,mse,rmse,total_time_s,ms_per_sample,predictions_csv
+model_fp16.tflite,tflite,1810,13.321937561035156,338.5754089355469,18.400418716310423,2.167643861999977,1.1975932939226392,pi_results/model_fp16_predictions.csv
