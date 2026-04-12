@@ -8,6 +8,7 @@
 
 int const retNotFound = -1;
 int const retInitFailed = -2;
+int counter = 0; // added for assignment add-on to count the number of lines read from the IMU data stream
 
 int main() {
    auto settings = std::make_unique<RTIMUSettings>("RTIMULib");
@@ -29,7 +30,7 @@ int main() {
 
    std::cout << "IMU is being read. Cancel with Ctrl+C" << std::endl;
 
-   std::ofstream file("data.csv", std::ios::trunc);
+   std::ofstream file("output.csv", std::ios::trunc);
    if (!file.is_open()) {
       std::cerr << "failed to open the file. \n";
       return -3;
@@ -39,9 +40,9 @@ int main() {
 
    while (true) {
        using namespace std::literals::chrono_literals;
-       auto const poll_intervall = 50ms;
+       auto const poll_interval = 50ms;
 
-       std::this_thread::sleep_for(poll_intervall);
+       std::this_thread::sleep_for(poll_interval);
 
        while (imu->IMURead()) {
          const auto& data = imu->getIMUData();
@@ -61,6 +62,24 @@ int main() {
             file << data.compass.z() << "\n";
 
             file.flush(); // ensures that the data is written to the file
+
+            // Assignment Add-On: Printing every 20th line to the console
+            counter++;
+
+            if (counter % 20 == 0) {
+               std::cout << "t=" << data.timestamp / 1000 << " ms | "
+                        << "Acc: (" << data.accel.x() << ", "
+                        << data.accel.y() << ", "
+                        << data.accel.z() << ") | "
+                        << "Gyro: (" << data.gyro.x() << ", "
+                        << data.gyro.y() << ", "
+                        << data.gyro.z() << ") | "
+                        << "Mag: (" << data.compass.x() << ", "
+                        << data.compass.y() << ", "
+                        << data.compass.z() << ")"
+                        << std::endl;
+            }
+
          } else
          {
             std::cerr << "Warning: Missing IMU Data\n";
