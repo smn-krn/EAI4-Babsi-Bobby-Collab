@@ -6,3 +6,8 @@ Team members:
 - Annalena Salchegger
 - Celina Binder
 - Simone Kern
+
+Because of our venv structure make sure to use the following command to activate the venv
+```bash
+ ~/.venv/bin/activate
+```
