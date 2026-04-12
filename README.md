@@ -11,3 +11,46 @@ Because of our venv structure make sure to use the following command to activate
 ```bash
  ~/.venv/bin/activate
 ```
+
+# Setting up Babsi (or later Bobby) as a deploy key
+
+## Generate ssh key pair on the raspberry pi via
+
+```bash
+ssh-keygen -t ed25519 -C "raspberrypi-deploy-key"
+```
+
+then add the public key to the repo as a deploy key with write access and add the private key to the ssh agent on the raspberry pi
+
+copy private key
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+## Add deploy on github via
+
+```Settings -> Deploy keys -> Add deploy key```
+
+## Check ssh not https is used for the repo via
+
+first go into the repo folder using cd
+
+```bash
+git remote -v
+```
+
+it is says https://github.com/...; WRONG
+
+we need to change it to ssh via
+
+```bash
+git remote set-url origin git@github.com:smn-krn/EAI4-Babsi-Bobby-Collab.git
+```
+
+## Test connection via
+
+```bash
+ssh -T git@github.com
+```
+
+if it asks whether you want to continue connecting type "yes" and then it should say "Hi smn-krn/EAI4-Babsi-Bobby-Collab! You've successfully authenticated, but GitHub does not provide shell access."
