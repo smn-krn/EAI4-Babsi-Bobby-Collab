@@ -54,3 +54,12 @@ ssh -T git@github.com
 ```
 
 if it asks whether you want to continue connecting type "yes" and then it should say "Hi smn-krn/EAI4-Babsi-Bobby-Collab! You've successfully authenticated, but GitHub does not provide shell access."
+
+## Add commit entity
+
+For Babsi we faked an email address, so all commits added from her device are by babsi. This means we cannot differentiate here between the three of us.
+
+```bash
+git config --global user.name "Babsi"
+git config --global user.email "babsi_dummyemail@raspberrypi.local"
+```
