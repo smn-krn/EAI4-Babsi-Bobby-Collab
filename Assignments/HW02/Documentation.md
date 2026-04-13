@@ -631,6 +631,9 @@ int main(int argc, char* argv[]) {
    return 0;
 }
 ```
+The test was successfull as well:
+<img width="1900" height="375" alt="Screenshot 2026-04-13 220728" src="https://github.com/user-attachments/assets/0db0b1a8-68df-4c53-a072-9bc6534004fc" />
+
 
 # Task 8
 ![alt text](images/image-1.png)
@@ -638,5 +641,10 @@ I used the suggested command:
 ```bash
 PS C:\Users\Celina Binder\Documents\FH_Hagenberg> scp kit-18@10.42.0.1:/home/kit-18/Documents/EAI/EAI4-Babsi-Bobby-Collab/Assignments/HW02/recordings/*.csv /EAI
 ```
+
+<img width="1875" height="750" alt="image" src="https://github.com/user-attachments/assets/9dd6f10d-4b9f-494a-bc6c-f93c59738f91" />
+<img width="656" height="635" alt="image" src="https://github.com/user-attachments/assets/bd64c543-2cc9-4bcb-978a-2e691e6478d8" />
+
+
 
 
