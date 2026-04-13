@@ -7,9 +7,20 @@ Team members:
 - Celina Binder
 - Simone Kern
 
-Because of our venv structure make sure to use the following command to activate the venv
+Because of our venv structure make sure to use the following command to activate the venv; use the cd if you're in the repo folder since our venv is outside of it. [ergo path should be ~/Documents/EAI; else cd to go one folder up first]
 ```bash
- ~/.venv/bin/activate
+cd ../
+source .venv/bin/activate
+```
+
+in order to execute python files on the raspberry pi, use the following command; make sure to be in the same folder as the venv is still
+```bash
+python3 EAI4-Babsi-Bobby-Collab/PATH/NAME.py
+```
+
+so for example
+```bash
+python3 EAI4-Babsi-Bobby-Collab/Assignments/HW02/video_recording.py
 ```
 
 # Setting up Babsi (or later Bobby) as a deploy key

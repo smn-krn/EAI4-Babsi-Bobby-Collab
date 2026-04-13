@@ -185,11 +185,359 @@ Apr 12 22:40:54 kit-18 logger[4812]: t=1776026454753 ms | Acc: (0.004392, -0.012
 # Task 4
 ![alt text](images/image-5.png)
 
+Implemented in python because the sensehat library makes this really convenient.
+
+code:
+```python
+from sense_hat import SenseHat
+
+sense = SenseHat()
+
+current_label = "A"
+sense.show_letter(current_label)
+
+while True:
+    for event in sense.stick.get_events():
+        if event.action == "pressed":
+
+            if event.direction == "up":
+                current_label = "A"
+            elif event.direction == "right":
+                current_label = "B"
+            elif event.direction == "left":
+                current_label = "C"
+            elif event.direction == "down":
+                current_label = "-"  # garbage
+
+            # update display
+            sense.show_letter(current_label,  text_colour=[0, 0, 255])
+```
+
+run the program via first activating the venv:
+```bash
+cd ../
+source .venv/bin/activate
+```
+
+first cd into the folder where the .venv is located and then activate it via the command above. Then cd into the folder where the file is located and run it via:
+```bash
+python3 EAI4-Babsi-Bobby-Collab/Assignments/HW02/stick_directions.py
+```
+
 # Task 5
 ![alt text](images/image-4.png)
 
+literal implementation of the task; actual implementation is in task 6 because currently it only states "Start recording" but does actually nothing; we choose to combine this already with the next one. Implemented in python because of the ease of the SenseHat library and the fact that we already had the code for task 4 in python which made it easier to just build on top of it. We also added a blinking red dot to indicate that recording is active; this is done via a simple timer and boolean variable to toggle the dot on and off every 0.5 seconds.
+
+```python
+from sense_hat import SenseHat
+import time
+
+sense = SenseHat()
+
+# labels
+label_map = {
+    "up": "A",
+    "right": "B",
+    "left": "C",
+    "down": "-"
+}
+
+def show_letter_with_dot(letter, show_dot):
+    sense.show_letter(letter)
+    if show_dot:
+        sense.set_pixel(7, 0, 255, 0, 0)  # red dot top-right
+
+
+# instruction screen
+sense.show_message("UP=A RIGHT=B LEFT=C DOWN=-", text_colour=[138, 43, 226])
+print("Press the joystick to start/stop recording. The current label will be shown on the LED matrix. UP=A RIGHT=B LEFT=C DOWN=-")
+
+current_label = None
+recording = False
+recording_direction = None
+cooldown = False
+
+# blinking control
+blink = False
+last_blink = time.time()
+
+while True:
+
+    # blinking logic
+    if recording:
+        if time.time() - last_blink > 0.5:
+            blink = not blink
+            last_blink = time.time()
+
+        show_letter_with_dot(current_label, blink)
+
+    for event in sense.stick.get_events():
+        if event.action != "pressed":
+            continue
+
+        direction = event.direction
+
+        # COOLDOWN
+        if cooldown:
+            continue
+
+        # IDLE => start recording
+        if not recording:
+            current_label = label_map.get(direction)
+
+            if current_label is not None:
+                recording = True
+                recording_direction = direction
+
+                print(f"START recording {current_label}")
+                show_letter_with_dot(current_label, True)
+
+        # RECORDING => stop if same direction
+        else:
+            if direction == recording_direction:
+                print(f"STOP recording {current_label}")
+
+                recording = False
+                recording_direction = None
+
+                # cooldown
+                cooldown = True
+                sense.clear(0, 255, 0)
+                time.sleep(1.5)
+
+                cooldown = False
+                sense.clear()
+
+    time.sleep(0.05)
+```
+
 # Task 6
 ![alt text](images/image-3.png)
+
+Added a new specific logger file, based on the c++ file earlier called logger_recording.cpp. It does not print every 20th reading:
+
+```cpp
+#include "RTIMULib.h"
+
+#include <iostream>
+#include <fstream>
+#include <chrono>
+#include <memory>
+#include <thread>
+
+int const retNotFound = -1;
+int const retInitFailed = -2;
+
+int main(int argc, char* argv[]) {
+
+   std::string filename = "data.csv";
+   std::string label = "X";
+
+   if (argc >= 2) filename = argv[1];
+   if (argc >= 3) label = argv[2];
+
+   auto settings = std::make_unique<RTIMUSettings>("RTIMULib");
+   auto imu = std::unique_ptr<RTIMU>(RTIMU::createIMU(settings.get()));
+
+   if (!imu || imu->IMUType() == RTIMU_TYPE_NULL) {
+      std::cerr << "No IMU / Sense Hat found.\n";
+      return retNotFound;
+   }
+
+   if (!imu->IMUInit()) {
+      std::cerr << "IMUInit failed\n";
+      return retInitFailed;
+   }
+
+   imu->setAccelEnable(true);
+   imu->setGyroEnable(true);
+   imu->setCompassEnable(true);
+
+   std::cout << "IMU is being read. Cancel with Ctrl+C" << std::endl;
+
+   std::ofstream file(filename, std::ios::trunc);
+   if (!file.is_open()) {
+      std::cerr << "Failed to open file.\n";
+      return -3;
+   }
+
+   file << "timestamp_ms,label,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,mag_x,mag_y,mag_z\n";
+
+   while (true) {
+       using namespace std::literals::chrono_literals;
+       std::this_thread::sleep_for(50ms);
+
+       while (imu->IMURead()) {
+         const auto& data = imu->getIMUData();
+
+         if (data.accelValid && data.gyroValid && data.compassValid) {
+            file << data.timestamp / 1000 << "," << label << ",";
+
+            file << data.accel.x() << ",";
+            file << data.accel.y() << ",";
+            file << data.accel.z() << ",";
+
+            file << data.gyro.x() << ",";
+            file << data.gyro.y() << ",";
+            file << data.gyro.z() << ",";
+
+            file << data.compass.x() << ",";
+            file << data.compass.y() << ",";
+            file << data.compass.z() << "\n";
+
+            file.flush();
+         }
+       }
+   }
+
+   return 0;
+}
+```
+
+compile using (in the same folder as the file)
+```bash
+cd EAI4-Babsi-Bobby-Collab/Assignments/HW02/
+g++ -std=c++17 -O2 -Wall logger_recording.cpp -o logger_recorder -I /usr/include/RTIMULib -lRTIMULib -lpthread
+```
+
+then changed the python file so that it calls the new logger_recording executable and passes the label as an argument; this way we can directly save the data with the correct label without having to do any post processing
+
+```python
+from sense_hat import SenseHat
+import time
+import subprocess
+import datetime
+import os
+
+sense = SenseHat()
+
+smiley = [
+    [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],
+    [0,0,0],[0,0,255],[0,0,255],[0,0,0],[0,0,0],[0,0,255],[0,0,255],[0,0,0],
+    [0,0,0],[0,0,255],[0,0,255],[0,0,0],[0,0,0],[0,0,255],[0,0,255],[0,0,0],
+    [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],
+    [0,255,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,255,0],
+    [0,0,0],[0,255,0],[0,255,0],[0,255,0],[0,255,0],[0,255,0],[0,255,0],[0,0,0],
+    [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],
+    [0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0],[0,0,0]
+]
+
+# create folder
+script_dir = os.path.dirname(os.path.abspath(__file__))
+recording_dir = os.path.join(script_dir, "recordings")
+
+os.makedirs(recording_dir, exist_ok=True)
+
+# labels
+label_map = {
+    "up": "A",
+    "right": "B",
+    "left": "C",
+    "down": "-"
+}
+
+def show_letter_with_dot(letter, show_dot):
+    sense.show_letter(letter)
+    if show_dot:
+        sense.set_pixel(7, 0, 255, 0, 0)
+
+# instruction screen
+sense.show_message("UP=A RIGHT=B LEFT=C DOWN=-", text_colour=[138, 43, 226])
+print("Press the joystick to start/stop recording. The current label will be shown on the LED matrix. UP=A RIGHT=B LEFT=C DOWN=-")
+# flush old joystick events
+sense.stick.get_events()
+# cooldown (green screen)
+cooldown = True
+sense.clear(0, 255, 0)
+time.sleep(2.5)
+
+cooldown = False
+sense.clear()
+sense.set_pixels(smiley)
+
+current_label = None
+recording = False
+recording_direction = None
+cooldown = False
+
+logger_process = None
+
+# blinking
+blink = False
+last_blink = time.time()
+
+while True:
+
+    # blinking red dot while recording
+    if recording:
+        if time.time() - last_blink > 0.5:
+            blink = not blink
+            last_blink = time.time()
+
+        show_letter_with_dot(current_label, blink)
+
+    # show smiley when idle
+    if not recording and not cooldown:
+        sense.set_pixels(smiley)
+
+    for event in sense.stick.get_events():
+        if event.action != "pressed":
+            continue
+
+        direction = event.direction
+
+        if cooldown:
+            continue
+
+        # START
+        if not recording:
+            current_label = label_map.get(direction)
+
+            if current_label is not None:
+                recording = True
+                recording_direction = direction
+
+                timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                filename = os.path.join(recording_dir, f"{timestamp}_{current_label}.csv")
+
+                print(f"START recording {current_label} => {filename}")
+
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                logger_path = os.path.join(script_dir, "logger_recorder")
+
+                logger_process = subprocess.Popen([logger_path, filename, current_label])
+
+                show_letter_with_dot(current_label, True)
+
+        # STOP
+        else:
+            if direction == recording_direction:
+                print(f"STOP recording {current_label}")
+
+                recording = False
+                recording_direction = None
+
+                if logger_process:
+                    logger_process.terminate()
+                    logger_process.wait()
+                    logger_process = None
+
+                # cooldown (green screen)
+                cooldown = True
+                sense.clear(0, 255, 0)
+                time.sleep(2.5)
+
+                cooldown = False
+                sense.clear()
+
+    time.sleep(0.05)
+```
+
+to run the program:
+```bash
+python3 EAI4-Babsi-Bobby-Collab/Assignments/HW02/video_recording.py
+```
 
 # Task 7
 ![alt text](images/image-2.png)
