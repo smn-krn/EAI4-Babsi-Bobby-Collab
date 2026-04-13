@@ -1,5 +1,7 @@
+// [TASK 7] Log program start with filename and label so the journal shows
+   // which recording session this process belongs to
+   std::cerr << "[logger_recorder] Started. File: " << filename << " | Label: " << label << "\n";
 #include "RTIMULib.h"
-
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -36,11 +38,18 @@ int main(int argc, char* argv[]) {
 
    std::cout << "IMU is being read. Cancel with Ctrl+C" << std::endl;
 
+   // TASK 7: Log program start
+   std::cerr << "[logger_recorder] Started. File: " << filename << " | Label: " << label << "\n";
+
    std::ofstream file(filename, std::ios::trunc);
    if (!file.is_open()) {
-      std::cerr << "Failed to open file.\n";
+      // TASK 7: Log file open error
+      std::cerr << "[logger_recorder] ERROR: Failed to open file: " << filename << "\n";
       return -3;
    }
+
+   // TASK 7: Log successful file open
+   std::cerr << "[logger_recorder] File opened successfully: " << filename << "\n";
 
    file << "timestamp_ms,label,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,mag_x,mag_y,mag_z\n";
 
@@ -67,6 +76,11 @@ int main(int argc, char* argv[]) {
             file << data.compass.z() << "\n";
 
             file.flush();
+
+            // TASK 7: Log write error if stream goes bad
+            if (!file) {
+               std::cerr << "[logger_recorder] ERROR: Write/flush failed for file: " << filename << "\n";
+            }
          }
        }
    }

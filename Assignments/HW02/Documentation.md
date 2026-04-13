@@ -541,6 +541,102 @@ python3 EAI4-Babsi-Bobby-Collab/Assignments/HW02/video_recording.py
 
 # Task 7
 ![alt text](images/image-2.png)
+Based on the files video_recordings.py and logger_recording.cpp I only added the following lines marked by comments stating that the line is done for Task 7.
+
+```cpp
+#include "RTIMULib.h"
+#include <iostream>
+#include <fstream>
+#include <chrono>
+#include <memory>
+#include <thread>
+
+int const retNotFound = -1;
+int const retInitFailed = -2;
+
+int main(int argc, char* argv[]) {
+
+   std::string filename = "data.csv";
+   std::string label = "X";
+
+   if (argc >= 2) filename = argv[1];
+   if (argc >= 3) label = argv[2];
+
+   auto settings = std::make_unique<RTIMUSettings>("RTIMULib");
+   auto imu = std::unique_ptr<RTIMU>(RTIMU::createIMU(settings.get()));
+
+   if (!imu || imu->IMUType() == RTIMU_TYPE_NULL) {
+      std::cerr << "No IMU / Sense Hat found.\n";
+      return retNotFound;
+   }
+
+   if (!imu->IMUInit()) {
+      std::cerr << "IMUInit failed\n";
+      return retInitFailed;
+   }
+
+   imu->setAccelEnable(true);
+   imu->setGyroEnable(true);
+   imu->setCompassEnable(true);
+
+   std::cout << "IMU is being read. Cancel with Ctrl+C" << std::endl;
+
+   // TASK 7: Log program start
+   std::cerr << "[logger_recorder] Started. File: " << filename << " | Label: " << label << "\n";
+
+   std::ofstream file(filename, std::ios::trunc);
+   if (!file.is_open()) {
+      // TASK 7: Log file open error
+      std::cerr << "[logger_recorder] ERROR: Failed to open file: " << filename << "\n";
+      return -3;
+   }
+
+   // TASK 7: Log successful file open
+   std::cerr << "[logger_recorder] File opened successfully: " << filename << "\n";
+
+   file << "timestamp_ms,label,accel_x,accel_y,accel_z,gyro_x,gyro_y,gyro_z,mag_x,mag_y,mag_z\n";
+
+   while (true) {
+       using namespace std::literals::chrono_literals;
+       std::this_thread::sleep_for(50ms);
+
+       while (imu->IMURead()) {
+         const auto& data = imu->getIMUData();
+
+         if (data.accelValid && data.gyroValid && data.compassValid) {
+            file << data.timestamp / 1000 << "," << label << ",";
+
+            file << data.accel.x() << ",";
+            file << data.accel.y() << ",";
+            file << data.accel.z() << ",";
+
+            file << data.gyro.x() << ",";
+            file << data.gyro.y() << ",";
+            file << data.gyro.z() << ",";
+
+            file << data.compass.x() << ",";
+            file << data.compass.y() << ",";
+            file << data.compass.z() << "\n";
+
+            file.flush();
+
+            // TASK 7: Log write error if stream goes bad
+            if (!file) {
+               std::cerr << "[logger_recorder] ERROR: Write/flush failed for file: " << filename << "\n";
+            }
+         }
+       }
+   }
+
+   return 0;
+}
+```
 
 # Task 8
 ![alt text](images/image-1.png)
+I used the suggested command:
+```bash
+PS C:\Users\Celina Binder\Documents\FH_Hagenberg> scp kit-18@10.42.0.1:/home/kit-18/Documents/EAI/EAI4-Babsi-Bobby-Collab/Assignments/HW02/recordings/*.csv /EAI
+```
+
+

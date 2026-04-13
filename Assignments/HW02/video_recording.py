@@ -61,6 +61,9 @@ logger_process = None
 blink = False
 last_blink = time.time()
 
+# TASK 7: Log program start
+print("[video_recording] Program started.")
+
 while True:
 
     # blinking red dot while recording
@@ -95,19 +98,25 @@ while True:
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 filename = os.path.join(recording_dir, f"{timestamp}_{current_label}.csv")
 
-                print(f"START recording {current_label} => {filename}")
+                # TASK 7: log start of recording with label and filename
+                print(f"[video_recording] START recording | Label: {current_label} | File: {filename}")
 
                 script_dir = os.path.dirname(os.path.abspath(__file__))
                 logger_path = os.path.join(script_dir, "logger_recorder")
 
-                logger_process = subprocess.Popen([logger_path, filename, current_label])
+                # TASK 7: Log error if logger_recorder process fails to start
+                try:
+                    logger_process = subprocess.Popen([logger_path, filename, current_label])
+                except Exception as e:
+                    print(f"[video_recording] ERROR: Failed to start logger_recorder: {e}")
 
                 show_letter_with_dot(current_label, True)
 
         # STOP
         else:
             if direction == recording_direction:
-                print(f"STOP recording {current_label}")
+                # TASK 7: Log stop of recording with label and filename
+                print(f"[video_recording] STOP recording | Label: {current_label} | File: {filename}")
 
                 recording = False
                 recording_direction = None
