@@ -126,7 +126,7 @@ input_tensor[0] = input_value;
 
 // Run Inference
 if (interpreter->Invoke() != kTfLiteOk) {
-    std::cerr >> "Invoke() failed \n"; // idk why he used >> , probably wrong?
+    std::cerr << "Invoke() failed \n"; // idk why he used >> , probably wrong?
     return retErrInvoke;
 }
 
@@ -165,6 +165,6 @@ Click on the `+` sign in the terminal and then on `Run Task...`.
 
 
 ## Step 6: Finish SetUp -> connect to the Raspberry Pi via e.g. cmd
-Follow the commands in the screenshot below, to finish.  
+Follow the commands in the screenshot below, to finish and check if everything went well.  
 ![alt text](image.png)
 
