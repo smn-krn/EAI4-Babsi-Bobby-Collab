@@ -23,6 +23,36 @@ so for example
 python3 EAI4-Babsi-Bobby-Collab/Assignments/HW02/video_recording.py
 ```
 
+# Switching between Babsi and Bobby for ssh via VSCode
+
+Connect with wifi (has been set up by now) and then on VSCode go to ```Connect to Host``` then select ```Configure SSH Hosts...``` and then select the config file. Then add the following lines to the config file:
+
+```bash
+# Babsi
+Host 10.42.0.1
+  HostName 10.42.0.1
+  User kit-18
+
+# Bobby
+Host 10.42.0.1
+   HostName 10.42.0.1
+   User kit-07
+```
+
+Depending on which Pi you're working with, comment out the other one. Since they share the same IP adress they conflict if they are in the file as written here. If you want to work with Babsi it would then look like this for example:
+
+```bash
+# Babsi
+Host 10.42.0.1
+  HostName 10.42.0.1
+  User kit-18
+
+# # Bobby
+# Host 10.42.0.1
+#    HostName 10.42.0.1
+#    User kit-07
+```
+
 # Setting up Babsi (or later Bobby) as a deploy key
 
 ## Generate ssh key pair on the raspberry pi via
