@@ -17,6 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import tensorflow as tf
+from data_sync import sync_from_pi
 
 # ---------------------------------------------------------------------------
 # CLI
@@ -66,6 +67,13 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument("--seed", type=int, default=42)
+
+    parser.add_argument(
+    "--remote-data",
+    default=None,
+    help="Optional rsync source like pi@IP:/path/to/recordings/"
+    )
+
     return parser.parse_args()
 
 
@@ -73,7 +81,7 @@ def parse_args() -> argparse.Namespace:
 # Data loading
 # ---------------------------------------------------------------------------
 
-# Sensor columns to use — we drop timestamp_ms (col 0) and label (col 1)
+# Sensor columns to use - we drop timestamp_ms (col 0) and label (col 1)
 SENSOR_COLS = [2, 3, 4, 5, 6, 7, 8, 9, 10]  # accel xyz, gyro xyz, mag xyz
 N_AXES = len(SENSOR_COLS)  # 9
 
@@ -113,7 +121,7 @@ def load_recordings(data_dir: Path, window_size: int, max_file_rows: int,
                 dtype=np.float32,
             )
         except Exception as exc:
-            print(f"  WARNING: could not read {csv_path.name}: {exc}")
+            print(f"  WARNING: not able toread {csv_path.name}: {exc}")
             continue
 
         if raw.ndim == 1:
@@ -178,7 +186,7 @@ def normalize(X_train: np.ndarray, X_val: np.ndarray, X_test: np.ndarray,
     """
     Z-score normalization per sensor axis.
     Statistics are computed ONLY on the training split to avoid data leakage.
-    mean/std shape: (1, 1, 9) — broadcasts over samples and timesteps.
+    mean/std shape: (1, 1, 9) - broadcasts over samples and timesteps.
     """
     mean = X_train.mean(axis=(0, 1), keepdims=True)
     std  = X_train.std( axis=(0, 1), keepdims=True) + 1e-8
@@ -196,7 +204,7 @@ def augment(X: np.ndarray, y: np.ndarray, rng: np.random.Generator,
       • Gaussian noise  – simulates IMU measurement noise
       • Time reversal   – gesture backwards is still the same class
       • Axis scaling    – small random gain per sensor axis (±10%)
-    Applied only to the training set — never to val or test.
+    Applied only to the training set - never to val or test.
     """
     aug_X = [X]
     aug_y = [y]
@@ -415,14 +423,17 @@ def main() -> int:
     artifacts_dir = Path(args.artifacts_dir)
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-    print("── Loading data ──")
+    if args.remote_data:
+        sync_from_pi(args.remote_data, data_dir)
+
+    print("--- Loading data ---")
     X, y, class_names = load_recordings(
         data_dir, window_size=args.window_size, max_file_rows=args.max_file_rows
     )
     print(f"Total windows: {X.shape[0]}  shape per sample: {X.shape[1:]}")
     n_classes = len(class_names)
 
-    print("\n── Splitting ──")
+    print("\n--- Splitting ---")
     X_train, y_train, X_val, y_val, X_test, y_test = split_data(
         X, y, val_frac=args.val_split, test_frac=args.test_split, seed=args.seed
     )
@@ -435,18 +446,18 @@ def main() -> int:
     X_train, y_train = augment(X_train, y_train, rng)
     print(f"{len(y_train)} windows)")
 
-    print("\n── Model ──")
+    print("\n--- Model ---")
     model = make_model(
         window_size=args.window_size, n_axes=N_AXES, n_classes=n_classes,
         filters=args.filters, dense_units=args.dense_units,
     )
     model.summary()
 
-    print("\n── Training ──")
+    print("\n--- Training ---")
     train_model(model, X_train, y_train, X_val, y_val,
                 epochs=args.epochs, batch_size=args.batch_size)
 
-    print("\n── Test set evaluation ──")
+    print("\n--- Test set evaluation ---")
     test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
     print(f"Test loss:     {test_loss:.4f}")
     print(f"Test accuracy: {test_acc * 100:.2f} %")
@@ -461,13 +472,14 @@ def main() -> int:
             "  • --epochs 100 (EarlyStopping will stop automatically)"
         )
 
-    print("\n── TFLite export ──")
+    print("\n--- TFLite export ---")
     tflite_path = export_tflite(model, artifacts_dir)
     verify_tflite(tflite_path, X_test, y_test)
 
-    print(f"\nDone. Artifacts written to: {artifacts_dir}/")
+    print(f"\nFinished :-) Artifacts written to: {artifacts_dir}/")
     return 0
 
+##bash: python train.py --remote-data pi@192.168.1.42:/home/pi/recordings/
 
 if __name__ == "__main__":
     raise SystemExit(main())
