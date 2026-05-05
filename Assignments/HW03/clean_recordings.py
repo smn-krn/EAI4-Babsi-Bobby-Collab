@@ -17,6 +17,7 @@ os.makedirs(output_folder, exist_ok=True)
 label_rows = []
 file_id = 0
 
+# Process each CSV file in the input folder
 for filename in os.listdir(input_folder):
     if not filename.endswith(".csv"):
         continue
