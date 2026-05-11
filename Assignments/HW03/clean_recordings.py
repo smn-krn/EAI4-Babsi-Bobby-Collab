@@ -8,8 +8,8 @@ to its corresponding label and original filename.
 import os
 import pandas as pd
 
-input_folder = "recordings"
-output_folder = "recordings_clean"
+input_folder = "test_recordings_AS"
+output_folder = "test_recordings_clean_AS"
 labels_file = "labels.csv"
 
 os.makedirs(output_folder, exist_ok=True)
