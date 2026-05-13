@@ -422,3 +422,6 @@ Confidence: 0.997473
 | Synapse Pruned    | 3 / 5       | 60%      |
 | Neuron Pruned     | 5 / 5       | 100%     |
 | Channel Pruned    | 3 / 5       | 60%      |
+
+# Training accuracy
+<img width="392" height="100" alt="grafik" src="https://github.com/user-attachments/assets/110fdd09-2966-40b0-ac55-33f737daffd6" />
